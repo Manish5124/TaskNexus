@@ -1,6 +1,7 @@
 package com.example.jwtdemo.model
 
 enum class Role {
-    USER,
-    ADMIN
+    ADMIN,
+    PROJECT_MANAGER,
+    TEAM_MEMBER
 }

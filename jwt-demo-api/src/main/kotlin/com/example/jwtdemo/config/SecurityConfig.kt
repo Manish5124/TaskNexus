@@ -43,7 +43,7 @@ class SecurityConfig(
                 it.requestMatchers("/api/admin/**")
                     .hasRole(Role.ADMIN.name)
                 it.requestMatchers("/api/users/**")
-                    .hasAnyRole(Role.ADMIN.name, Role.USER.name)
+                    .hasAnyRole(Role.ADMIN.name, Role.TEAM_MEMBER.name)
                 it.anyRequest().authenticated()
             }
             .sessionManagement {
