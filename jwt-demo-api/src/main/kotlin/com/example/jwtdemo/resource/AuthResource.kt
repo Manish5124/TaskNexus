@@ -34,21 +34,24 @@ class AuthResource(
                 User(
                     username = "admin",
                     password = encoder.encode("admin123"),
-                    role = Role.ADMIN
+                    role = Role.ADMIN,
+                    isActive = true
                 )
             )
             userPersistence.save(
                 User(
                     username = "teammember",
                     password = encoder.encode("teammember123"),
-                    role = Role.TEAM_MEMBER
+                    role = Role.TEAM_MEMBER,
+                    isActive = true
                 )
             )
             userPersistence.save(
                 User(
                     username = "projectmember",
                     password = encoder.encode("projectmember123"),
-                    role = Role.PROJECT_MANAGER
+                    role = Role.PROJECT_MANAGER,
+                    isActive = true
                 )
             )
         }
@@ -110,7 +113,8 @@ class AuthResource(
             userPersistence.save(User(
                 username = request.username,
                 password = encoder.encode(request.password),
-                role = if (request.role == Role.ADMIN.name) Role.ADMIN else Role.TEAM_MEMBER
+                role = if (request.role == Role.ADMIN.name) Role.ADMIN else Role.TEAM_MEMBER,
+                isActive = true
             ))
             return ResponseEntity
                         .status(HttpStatus.CREATED)
