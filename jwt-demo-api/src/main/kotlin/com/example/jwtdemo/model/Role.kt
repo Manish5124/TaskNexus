@@ -5,3 +5,11 @@ enum class Role {
     PROJECT_MANAGER,
     TEAM_MEMBER
 }
+
+enum class Status {
+    TODO, IN_PROGRESS, DONE
+}
+
+enum class Priority {
+    LOW, MEDIUM, HIGH
+}

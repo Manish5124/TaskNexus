@@ -35,7 +35,7 @@ class AuthResource(
                     username = "admin",
                     password = encoder.encode("admin123"),
                     role = Role.ADMIN,
-                    isActive = true
+                    email = "admin@gmail.com"
                 )
             )
             userPersistence.save(
@@ -43,15 +43,15 @@ class AuthResource(
                     username = "teammember",
                     password = encoder.encode("teammember123"),
                     role = Role.TEAM_MEMBER,
-                    isActive = true
+                    email = "teammember@gmail.com"
                 )
             )
             userPersistence.save(
                 User(
-                    username = "projectmember",
-                    password = encoder.encode("projectmember123"),
+                    username = "projectmanager",
+                    password = encoder.encode("projectmanager123"),
                     role = Role.PROJECT_MANAGER,
-                    isActive = true
+                    email = "projectmanager@gmail.com"
                 )
             )
         }
@@ -114,8 +114,8 @@ class AuthResource(
                 username = request.username,
                 password = encoder.encode(request.password),
                 role = if (request.role == Role.ADMIN.name) Role.ADMIN else Role.TEAM_MEMBER,
-                isActive = true
-            ))
+                email = request.email
+                  ))
             return ResponseEntity
                         .status(HttpStatus.CREATED)
                         .body(RegisterResponse("User registered"))

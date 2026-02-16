@@ -1,42 +1,38 @@
 package com.example.jwtdemo.model
 
 import jakarta.persistence.CascadeType
-import jakarta.persistence.Column
 import jakarta.persistence.Entity
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import java.time.LocalDate
 import java.time.LocalDateTime
 
+
 @Entity
-@Table(name = "users")
-class User(
+@Table(name = "sprint")
+class Sprint(
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
-    val username: String,
+    val name: String,
 
-    val password: String,
+    val startDate: LocalDate,
 
-    @Column(unique = true)
-    val email: String,
+    val endDate: LocalDate,
 
-    @Enumerated(EnumType.STRING)
-    val role: Role,
+    @ManyToOne
+    @JoinColumn(name = "project_id")
+    val project: Project,
 
-    val isActive: Boolean = true,
-
-    @OneToMany(mappedBy = "users", cascade = [CascadeType.ALL])
+    @OneToMany(mappedBy = "sprint", cascade = [CascadeType.ALL])
     val tasks: List<Task> = mutableListOf(),
-
-    @OneToMany(mappedBy = "users", cascade = [CascadeType.ALL])
-    val userProjects: List<UserProject> = mutableListOf(),
 
     val createdDate: LocalDateTime = LocalDateTime.now(),
 

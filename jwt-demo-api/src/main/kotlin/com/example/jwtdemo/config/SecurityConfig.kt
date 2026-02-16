@@ -36,15 +36,22 @@ class SecurityConfig(
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http
-            .csrf { it.disable() }
+            .csrf {
+               it.disable()
+            }
             .cors {  }
             .authorizeHttpRequests {
-                it.requestMatchers("/api/auth/**", "/h2/**").permitAll()
+                it.requestMatchers("/api/auth/**", "/h2-console/**").permitAll()
                 it.requestMatchers("/api/admin/**")
                     .hasRole(Role.ADMIN.name)
                 it.requestMatchers("/api/users/**")
                     .hasAnyRole(Role.ADMIN.name, Role.TEAM_MEMBER.name)
                 it.anyRequest().authenticated()
+            }
+            .headers {
+                it.frameOptions { frame ->
+                    frame.sameOrigin()
+                }
             }
             .sessionManagement {
                 it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
