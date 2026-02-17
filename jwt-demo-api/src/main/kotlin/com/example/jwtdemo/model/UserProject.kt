@@ -14,7 +14,7 @@ import java.time.LocalDateTime
 class UserProject(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long = 0,
+    val id: Long=0,
 
     @ManyToOne
     @JoinColumn(name = "users_id")

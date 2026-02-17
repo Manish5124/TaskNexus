@@ -12,12 +12,14 @@ import java.time.LocalDateTime
 @Entity
 @Table(name = "project")
 class Project(
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long,
+    var id: Long = 0,
+
     val name: String,
     val description: String,
-    val isActive: Boolean,
+    var isActive: Boolean =true,
 
     @OneToMany(mappedBy = "project", cascade = [CascadeType.ALL], orphanRemoval = true)
     var sprints: MutableList<Sprint> = mutableListOf(),
