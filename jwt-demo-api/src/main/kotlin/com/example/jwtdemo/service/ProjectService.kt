@@ -1,16 +1,24 @@
 package com.example.jwtdemo.service
 
+import com.example.jwtdemo.dto.CreateProjectMemberRequest
 import com.example.jwtdemo.dto.ProjectRequest
+import com.example.jwtdemo.dto.ProjectResponse
 import com.example.jwtdemo.model.Project
+import com.example.jwtdemo.model.Role
+import com.example.jwtdemo.model.User
 import com.example.jwtdemo.model.UserProject
 import com.example.jwtdemo.persistence.ProjectPersistence
+import com.example.jwtdemo.persistence.UserPersistence
+import com.example.jwtdemo.persistence.UserProjectPersistence
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 
 
 @Service
 class ProjectService(
-    private val projectPersistence: ProjectPersistence
+    private val projectPersistence: ProjectPersistence,
+    private val userPersistence: UserPersistence,
+    private val userProjectPersistence: UserProjectPersistence
 ) {
 
 //    1. Create Project
@@ -43,8 +51,30 @@ class ProjectService(
 
     // 6. Add Member to Project
     @Transactional
-    fun addMember(projectId: Long, userProject: UserProject) {
-        val project = getProjectById(projectId)
-        project.userProjects.add(userProject)
+    fun createAndAssignMember(
+        projectId: Long,
+        request: CreateProjectMemberRequest
+    ) {
+
+        val project = projectPersistence.findById(projectId)
+            .orElseThrow { RuntimeException("Project not found") }
+
+        // 1️⃣ Create User
+        val user = User(
+            username = request.username,
+            password = request.password,
+            role = Role.valueOf(request.role.uppercase()),
+            email = request.email,
+        )
+
+        val savedUser = userPersistence.save(user)
+
+        // 2️⃣ Assign to Project
+        val userProject = UserProject(
+            users = savedUser,
+            project = project
+        )
+
+        userProjectPersistence.save(userProject)
     }
 }

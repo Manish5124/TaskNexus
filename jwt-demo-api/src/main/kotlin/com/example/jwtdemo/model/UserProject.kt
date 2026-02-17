@@ -1,5 +1,6 @@
 package com.example.jwtdemo.model
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -18,6 +19,7 @@ class UserProject(
 
     @ManyToOne
     @JoinColumn(name = "users_id")
+    @JsonIgnore
     val users: User,
 
     @ManyToOne
