@@ -1,5 +1,6 @@
 package com.example.jwtdemo.model
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -36,6 +37,7 @@ class User(
     val tasks: List<Task> = mutableListOf(),
 
     @OneToMany(mappedBy = "users", cascade = [CascadeType.ALL])
+    @JsonIgnore
     val userProjects: List<UserProject> = mutableListOf(),
 
     val createdDate: LocalDateTime = LocalDateTime.now(),

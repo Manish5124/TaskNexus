@@ -3,7 +3,6 @@ package com.example.jwtdemo.service
 import com.example.jwtdemo.dto.CreateProjectMemberRequest
 import com.example.jwtdemo.dto.ProjectRequest
 import com.example.jwtdemo.dto.ProjectResponse
-import com.example.jwtdemo.model.Project
 import com.example.jwtdemo.model.Role
 import com.example.jwtdemo.model.User
 import com.example.jwtdemo.model.UserProject
@@ -12,69 +11,69 @@ import com.example.jwtdemo.persistence.UserPersistence
 import com.example.jwtdemo.persistence.UserProjectPersistence
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
-
+import com.example.jwtdemo.mapper.toEntity
+import com.example.jwtdemo.mapper.toResponseDto
+import org.springframework.security.crypto.password.PasswordEncoder
 
 @Service
-class ProjectService(
+open class ProjectService(
     private val projectPersistence: ProjectPersistence,
     private val userPersistence: UserPersistence,
-    private val userProjectPersistence: UserProjectPersistence
+    private val userProjectPersistence: UserProjectPersistence,
+    private val encoder: PasswordEncoder
 ) {
 
-//    1. Create Project
-    fun createProject(request: ProjectRequest): Project {
-        val project = Project(
-            id = 0,
-            name = request.name,
-            description = request.description
-        )
-        return projectPersistence.save(project)
+     open fun createProject(request: ProjectRequest): String {
+        projectPersistence.save(request.toEntity())
+        return "Project created successfully"
     }
 
-    // 2. Get All Projects
-    fun getAllProjects(): List<Project> {
+    open fun getAllProjects(): List<ProjectResponse> {
         return projectPersistence.findAllByIsActiveTrue()
+            .map { it.toResponseDto() }
     }
 
-    // 3. Get Project By ID
-    fun getProjectById(id: Long): Project {
-        return projectPersistence.findById(id)
+    open fun getProjectById(id: Long): ProjectResponse {
+        val project = projectPersistence.findById(id)
             .orElseThrow { RuntimeException("Project not found with id $id") }
+
+        return project.toResponseDto()
     }
 
-    // 4. Soft Delete (ADMIN)
     @Transactional
-    fun softDeleteProject(id: Long) {
-        val project = getProjectById(id)
+    open fun softDeleteProject(id: Long): String {
+        val project = projectPersistence.findById(id)
+            .orElseThrow { RuntimeException("Project not found") }
+
         project.isActive = false
+        return "Project deleted successfully"
     }
 
-    // 6. Add Member to Project
     @Transactional
-    fun createAndAssignMember(
+    open fun createAndAssignMember(
         projectId: Long,
         request: CreateProjectMemberRequest
-    ) {
+    ): String {
 
         val project = projectPersistence.findById(projectId)
             .orElseThrow { RuntimeException("Project not found") }
 
-        // 1️⃣ Create User
         val user = User(
             username = request.username,
-            password = request.password,
+            password = encoder.encode(request.password),
             role = Role.valueOf(request.role.uppercase()),
             email = request.email,
         )
 
         val savedUser = userPersistence.save(user)
 
-        // 2️⃣ Assign to Project
         val userProject = UserProject(
             users = savedUser,
             project = project
         )
 
         userProjectPersistence.save(userProject)
+
+        return "Member created and assigned to project successfully"
     }
 }
