@@ -36,6 +36,4 @@ class SprintServiceImpl(
 
         return sprintPersistence.save(sprint)
     }
-
-    fun getSprintById()
 }
