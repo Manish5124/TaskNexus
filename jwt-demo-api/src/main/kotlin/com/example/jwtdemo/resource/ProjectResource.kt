@@ -1,5 +1,6 @@
 package com.example.jwtdemo.resource
 
+import com.example.jwtdemo.dto.CreateProjectMemberRequest
 import com.example.jwtdemo.dto.ProjectRequest
 import com.example.jwtdemo.model.UserProject
 import com.example.jwtdemo.service.ProjectService
@@ -37,6 +38,6 @@ class ProjectResource(
     @PostMapping("/{id}/members")
     fun addMember(
         @PathVariable id: Long,
-        @RequestBody userProject: UserProject
-    ) = projectService.addMember(id, userProject)
+        @RequestBody user: CreateProjectMemberRequest
+    ) = projectService.createAndAssignMember(id, user)
 }
