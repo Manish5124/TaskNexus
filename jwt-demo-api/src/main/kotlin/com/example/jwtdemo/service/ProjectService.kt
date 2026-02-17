@@ -23,7 +23,7 @@ open class ProjectService(
     private val encoder: PasswordEncoder
 ) {
 
-     open fun createProject(request: ProjectRequest): String {
+    open fun createProject(request: ProjectRequest): String {
         projectPersistence.save(request.toEntity())
         return "Project created successfully"
     }
@@ -49,6 +49,8 @@ open class ProjectService(
         return "Project deleted successfully"
     }
 
+
+    // assign team and project manager
     @Transactional
     open fun createAndAssignMember(
         projectId: Long,
@@ -56,24 +58,60 @@ open class ProjectService(
     ): String {
 
         val project = projectPersistence.findById(projectId)
-            .orElseThrow { RuntimeException("Project not found") }
+            .orElseThrow { RuntimeException("Project not found with id $projectId") }
 
-        val user = User(
-            username = request.username,
-            password = encoder.encode(request.password),
-            role = Role.valueOf(request.role.uppercase()),
-            email = request.email,
-        )
+        val user = userPersistence.findByUsername(request.username)
+            ?: userPersistence.save(
+                User(
+                    username = request.username,
+                    password = encoder.encode(request.password),
+                    role = Role.valueOf(request.role.uppercase()),
+                    email = request.email
+                )
+            )
 
-        val savedUser = userPersistence.save(user)
+        val alreadyMapped = userProjectPersistence
+            .existsByUsersAndProject(user, project)
+
+        if (alreadyMapped) {
+            return "User already assigned to this project"
+        }
 
         val userProject = UserProject(
-            users = savedUser,
+            users = user,
             project = project
         )
 
         userProjectPersistence.save(userProject)
 
-        return "Member created and assigned to project successfully"
+        return "Member assigned to project successfully"
     }
+
+
+    @Transactional
+    open fun removeProjectMember(
+        projectId: Long,
+        userId: Long
+    ): String {
+
+
+        val project = projectPersistence.findById(projectId)
+            .orElseThrow { RuntimeException("Project not found with id $projectId") }
+
+
+        val user = userPersistence.findById(userId)
+            .orElseThrow { RuntimeException("User not found with id $userId") }
+
+
+
+        val mapping = userProjectPersistence
+            .findByUsersAndProject(user, project)
+            ?: return "User is not assigned to this project"
+
+        userProjectPersistence.delete(mapping)
+
+        return "User removed from project successfully"
+    }
+
+
 }
