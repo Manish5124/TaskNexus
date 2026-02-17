@@ -3,6 +3,8 @@ package com.example.jwtdemo.service
 import com.example.jwtdemo.dto.CreateProjectMemberRequest
 import com.example.jwtdemo.dto.ProjectRequest
 import com.example.jwtdemo.dto.ProjectResponse
+import com.example.jwtdemo.exception.ConflictException
+import com.example.jwtdemo.exception.NotFoundException
 import com.example.jwtdemo.model.Role
 import com.example.jwtdemo.model.User
 import com.example.jwtdemo.model.UserProject
@@ -13,6 +15,7 @@ import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import com.example.jwtdemo.mapper.toEntity
 import com.example.jwtdemo.mapper.toResponseDto
+import org.slf4j.LoggerFactory
 import org.springframework.security.crypto.password.PasswordEncoder
 
 @Service
@@ -23,30 +26,45 @@ open class ProjectService(
     private val encoder: PasswordEncoder
 ) {
 
+    private val log = LoggerFactory.getLogger(ProjectService::class.java)
+
     open fun createProject(request: ProjectRequest): String {
+        log.info("Creating project with name: {}", request.name)
         projectPersistence.save(request.toEntity())
+        log.info("Project created successfully")
         return "Project created successfully"
     }
 
     open fun getAllProjects(): List<ProjectResponse> {
+        log.info("Fetching all active projects")
         return projectPersistence.findAllByIsActiveTrue()
             .map { it.toResponseDto() }
     }
 
 
     open fun getProjectById(id: Long): ProjectResponse {
+        log.info("Fetching project with id: {}", id)
         val project = projectPersistence.findById(id)
-            .orElseThrow { RuntimeException("Project not found with id $id") }
+            .orElseThrow {
+                log.error("Project not found with id: {}", id)
+                NotFoundException("Project not found with id $id")
+            }
 
         return project.toResponseDto()
     }
 
+
+
     @Transactional
     open fun softDeleteProject(id: Long): String {
+        log.warn("Soft deleting project with id: {}", id)
         val project = projectPersistence.findById(id)
-            .orElseThrow { RuntimeException("Project not found") }
+            .orElseThrow {
+                log.error("Project not found with id: {}", id)
+                NotFoundException("Project not found with id $id") }
 
         project.isActive = false
+        log.info("Project {} marked as inactive", id)
         return "Project deleted successfully"
     }
 
@@ -58,8 +76,11 @@ open class ProjectService(
         request: CreateProjectMemberRequest
     ): String {
 
+        log.info("Assigning user [{}] to project [{}]", request.username, projectId)
         val project = projectPersistence.findById(projectId)
-            .orElseThrow { RuntimeException("Project not found with id $projectId") }
+            .orElseThrow {
+                log.error("Project not found with id: {}", projectId)
+                NotFoundException("Project not found with id $projectId") }
 
         val user = userPersistence.findByUsername(request.username)
             ?: userPersistence.save(
@@ -75,7 +96,12 @@ open class ProjectService(
             .existsByUsersAndProject(user, project)
 
         if (alreadyMapped) {
-            return "User already assigned to this project"
+            log.warn(
+                "User [{}] is already assigned to project [{}]",
+                user.username,
+                projectId
+            )
+            throw ConflictException("User already assigned to this project")
         }
 
         val userProject = UserProject(
@@ -95,21 +121,33 @@ open class ProjectService(
         userId: Long
     ): String {
 
+        log.info("Removing user [{}] from project [{}]", userId, projectId)
 
         val project = projectPersistence.findById(projectId)
-            .orElseThrow { RuntimeException("Project not found with id $projectId") }
+            .orElseThrow {
+                log.error("Project not found with id: {}", projectId)
+                NotFoundException("Project not found with id $projectId") }
 
 
         val user = userPersistence.findById(userId)
-            .orElseThrow { RuntimeException("User not found with id $userId") }
+            .orElseThrow {
+                log.error("User not found with id: {}", userId)
+                NotFoundException("User not found with id $userId") }
 
 
 
         val mapping = userProjectPersistence
             .findByUsersAndProject(user, project)
-            ?: return "User is not assigned to this project"
+            ?: throw ConflictException("User is not assigned to this project")
 
         userProjectPersistence.delete(mapping)
+
+        log.info(
+            "User [{}] successfully removed from project [{}]",
+            userId,
+            projectId
+        )
+
 
         return "User removed from project successfully"
     }
