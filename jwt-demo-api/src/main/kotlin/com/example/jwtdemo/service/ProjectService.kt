@@ -33,6 +33,7 @@ open class ProjectService(
             .map { it.toResponseDto() }
     }
 
+
     open fun getProjectById(id: Long): ProjectResponse {
         val project = projectPersistence.findById(id)
             .orElseThrow { RuntimeException("Project not found with id $id") }

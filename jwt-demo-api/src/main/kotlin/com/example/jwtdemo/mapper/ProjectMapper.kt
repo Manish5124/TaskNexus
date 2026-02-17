@@ -13,7 +13,8 @@ import com.example.jwtdemo.model.Project
         id = this.id,
         name = this.name,
         description = this.description,
-        isActive = this.isActive
+        isActive = this.isActive,
+        createdDate = this.createdDate
     )
 
     fun List<Project>.toResponseDtos(): List<ProjectResponse> = map { it.toResponseDto() }
