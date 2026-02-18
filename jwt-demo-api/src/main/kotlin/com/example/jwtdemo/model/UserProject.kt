@@ -24,6 +24,7 @@ class UserProject(
 
     @ManyToOne
     @JoinColumn(name = "project_id")
+    @JsonIgnore
     val project: Project,
 
     val createdDate: LocalDateTime = LocalDateTime.now(),

@@ -3,7 +3,8 @@ package com.example.jwtdemo.service
 import com.example.jwtdemo.dto.CreateProjectMemberRequest
 import com.example.jwtdemo.dto.ProjectRequest
 import com.example.jwtdemo.dto.ProjectResponse
-import com.example.jwtdemo.model.Project
+import com.example.jwtdemo.exception.ConflictException
+import com.example.jwtdemo.exception.NotFoundException
 import com.example.jwtdemo.model.Role
 import com.example.jwtdemo.model.User
 import com.example.jwtdemo.model.UserProject
@@ -12,69 +13,144 @@ import com.example.jwtdemo.persistence.UserPersistence
 import com.example.jwtdemo.persistence.UserProjectPersistence
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
-
+import com.example.jwtdemo.mapper.toEntity
+import com.example.jwtdemo.mapper.toResponseDto
+import org.slf4j.LoggerFactory
+import org.springframework.security.crypto.password.PasswordEncoder
 
 @Service
-class ProjectService(
+open class ProjectService(
     private val projectPersistence: ProjectPersistence,
     private val userPersistence: UserPersistence,
-    private val userProjectPersistence: UserProjectPersistence
+    private val userProjectPersistence: UserProjectPersistence,
+    private val encoder: PasswordEncoder
 ) {
 
-//    1. Create Project
-    fun createProject(request: ProjectRequest): Project {
-        val project = Project(
-            id = 0,
-            name = request.name,
-            description = request.description
-        )
-        return projectPersistence.save(project)
+    private val log = LoggerFactory.getLogger(ProjectService::class.java)
+
+    open fun createProject(request: ProjectRequest): String {
+        log.info("Creating project with name: {}", request.name)
+        projectPersistence.save(request.toEntity())
+        log.info("Project created successfully")
+        return "Project created successfully"
     }
 
-    // 2. Get All Projects
-    fun getAllProjects(): List<Project> {
+    open fun getAllProjects(): List<ProjectResponse> {
+        log.info("Fetching all active projects")
         return projectPersistence.findAllByIsActiveTrue()
+            .map { it.toResponseDto() }
     }
 
-    // 3. Get Project By ID
-    fun getProjectById(id: Long): Project {
-        return projectPersistence.findById(id)
-            .orElseThrow { RuntimeException("Project not found with id $id") }
+
+    open fun getProjectById(id: Long): ProjectResponse {
+        log.info("Fetching project with id: {}", id)
+        val project = projectPersistence.findById(id)
+            .orElseThrow {
+                log.error("Project not found with id: {}", id)
+                NotFoundException("Project not found with id $id")
+            }
+
+        return project.toResponseDto()
     }
 
-    // 4. Soft Delete (ADMIN)
+
+
     @Transactional
-    fun softDeleteProject(id: Long) {
-        val project = getProjectById(id)
+    open fun softDeleteProject(id: Long): String {
+        log.warn("Soft deleting project with id: {}", id)
+        val project = projectPersistence.findById(id)
+            .orElseThrow {
+                log.error("Project not found with id: {}", id)
+                NotFoundException("Project not found with id $id") }
+
         project.isActive = false
+        log.info("Project {} marked as inactive", id)
+        return "Project deleted successfully"
     }
 
-    // 6. Add Member to Project
+
+    // assign team and project manager
     @Transactional
-    fun createAndAssignMember(
+    open fun createAndAssignMember(
         projectId: Long,
         request: CreateProjectMemberRequest
-    ) {
+    ): String {
 
+        log.info("Assigning user [{}] to project [{}]", request.username, projectId)
         val project = projectPersistence.findById(projectId)
-            .orElseThrow { RuntimeException("Project not found") }
+            .orElseThrow {
+                log.error("Project not found with id: {}", projectId)
+                NotFoundException("Project not found with id $projectId") }
 
-        // 1️⃣ Create User
-        val user = User(
-            username = request.username,
-            password = request.password,
-            role = Role.valueOf(request.role.uppercase()),
-            email = request.email,
-        )
+        val user = userPersistence.findByUsername(request.username)
+            ?: userPersistence.save(
+                User(
+                    username = request.username,
+                    password = encoder.encode(request.password),
+                    role = Role.valueOf(request.role.uppercase()),
+                    email = request.email
+                )
+            )
 
-        val savedUser = userPersistence.save(user)
+        val alreadyMapped = userProjectPersistence
+            .existsByUsersAndProject(user, project)
 
-        // 2️⃣ Assign to Project
+        if (alreadyMapped) {
+            log.warn(
+                "User [{}] is already assigned to project [{}]",
+                user.username,
+                projectId
+            )
+            throw ConflictException("User already assigned to this project")
+        }
+
         val userProject = UserProject(
-            users = savedUser,
+            users = user,
             project = project
         )
 
         userProjectPersistence.save(userProject)
+
+        return "Member assigned to project successfully"
     }
+
+
+    @Transactional
+    open fun removeProjectMember(
+        projectId: Long,
+        userId: Long
+    ): String {
+
+        log.info("Removing user [{}] from project [{}]", userId, projectId)
+
+        val project = projectPersistence.findById(projectId)
+            .orElseThrow {
+                log.error("Project not found with id: {}", projectId)
+                NotFoundException("Project not found with id $projectId") }
+
+
+        val user = userPersistence.findById(userId)
+            .orElseThrow {
+                log.error("User not found with id: {}", userId)
+                NotFoundException("User not found with id $userId") }
+
+
+
+        val mapping = userProjectPersistence
+            .findByUsersAndProject(user, project)
+            ?: throw ConflictException("User is not assigned to this project")
+
+        userProjectPersistence.delete(mapping)
+
+        log.info(
+            "User [{}] successfully removed from project [{}]",
+            userId,
+            projectId
+        )
+
+
+        return "User removed from project successfully"
+    }
+
+
 }
