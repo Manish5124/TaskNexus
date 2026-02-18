@@ -41,7 +41,6 @@ open class ProjectService(
             .map { it.toResponseDto() }
     }
 
-
     open fun getProjectById(id: Long): ProjectResponse {
         log.info("Fetching project with id: {}", id)
         val project = projectPersistence.findById(id)
@@ -52,8 +51,6 @@ open class ProjectService(
 
         return project.toResponseDto()
     }
-
-
 
     @Transactional
     open fun softDeleteProject(id: Long): String {
@@ -134,8 +131,6 @@ open class ProjectService(
                 log.error("User not found with id: {}", userId)
                 NotFoundException("User not found with id $userId") }
 
-
-
         val mapping = userProjectPersistence
             .findByUsersAndProject(user, project)
             ?: throw ConflictException("User is not assigned to this project")
@@ -147,8 +142,6 @@ open class ProjectService(
             userId,
             projectId
         )
-
-
         return "User removed from project successfully"
     }
 

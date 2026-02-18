@@ -37,11 +37,28 @@ class SecurityConfig(
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http
             .csrf {
-               it.disable()
+                it.disable()
             }
-            .cors {  }
+            .cors { }
             .authorizeHttpRequests {
-                it.requestMatchers("/api/auth/**", "/h2-console/**").permitAll()
+
+                it.requestMatchers(
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html"
+                ).permitAll()
+
+
+                it.requestMatchers(
+                    "/actuator",
+                    "/actuator/**"
+                ).permitAll()
+
+
+                it.requestMatchers(
+                    "/api/auth/**",
+                    "/h2-console/**"
+                ).permitAll()
                 it.requestMatchers("/api/admin/**")
                     .hasRole(Role.ADMIN.name)
                 it.requestMatchers("/api/project/**")
@@ -58,8 +75,10 @@ class SecurityConfig(
             .sessionManagement {
                 it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }
-            .addFilterBefore(jwtAuthFilter,
-                UsernamePasswordAuthenticationFilter::class.java)
+            .addFilterBefore(
+                jwtAuthFilter,
+                UsernamePasswordAuthenticationFilter::class.java
+            )
         return http.build()
     }
 
