@@ -1,5 +1,6 @@
 package com.example.jwtdemo.model
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -21,20 +22,21 @@ class Sprint(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
-    val name: String,
+    var name: String,
 
-    val startDate: LocalDate,
+    var startDate: LocalDate,
 
-    val endDate: LocalDate,
+    var endDate: LocalDate,
 
     @ManyToOne
     @JoinColumn(name = "project_id")
-    val project: Project,
+    @JsonIgnore
+    var project: Project,
 
     @OneToMany(mappedBy = "sprint", cascade = [CascadeType.ALL])
     val tasks: List<Task> = mutableListOf(),
 
     val createdDate: LocalDateTime = LocalDateTime.now(),
 
-    val updatedDate: LocalDateTime = LocalDateTime.now()
+    var updatedDate: LocalDateTime = LocalDateTime.now()
 )

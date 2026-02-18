@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank
 import java.time.LocalDate
 
 data class SprintRequest(
+    val id : Long? = null,
     val name: String,
     val startDate: LocalDate,
     val endDate: LocalDate,

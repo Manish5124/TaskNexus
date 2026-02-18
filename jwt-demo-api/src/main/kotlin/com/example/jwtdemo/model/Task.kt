@@ -18,37 +18,37 @@ class Task(
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long = 0,
+    var id: Long = 0,
 
-    val title: String,
+    var title: String,
 
-    val description: String,
-
-    @Enumerated(EnumType.STRING)
-    val status: Status,
+    var description: String,
 
     @Enumerated(EnumType.STRING)
-    val priority: Priority,
+    var status: Status = Status.TODO,
 
-    val dueDate: LocalDate,
+    @Enumerated(EnumType.STRING)
+    var priority: Priority,
 
-    val startDate: LocalDate,
+    var dueDate: LocalDate,
 
-    val isActive: Boolean = true,
+    var startDate: LocalDate,
+
+    var isActive: Boolean = true,
 
     @ManyToOne
     @JoinColumn(name = "users_id")
-    val users: User,
+    var users: User,
 
     @ManyToOne
     @JoinColumn(name = "project_id")
-    val project: Project,
+    var project: Project,
 
     @ManyToOne
     @JoinColumn(name = "sprint_id")
-    val sprint: Sprint,
+    var sprint: Sprint,
 
-    val createdDate: LocalDateTime = LocalDateTime.now(),
+    var createdDate: LocalDateTime = LocalDateTime.now(),
 
-    val updatedDate: LocalDateTime = LocalDateTime.now()
+    var updatedDate: LocalDateTime = LocalDateTime.now()
 )
