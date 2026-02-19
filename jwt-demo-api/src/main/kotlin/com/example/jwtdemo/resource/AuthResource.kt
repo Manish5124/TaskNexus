@@ -3,6 +3,7 @@ package com.example.jwtdemo.resource
 import com.example.jwtdemo.dto.AuthRequest
 import com.example.jwtdemo.dto.AuthResponse
 import com.example.jwtdemo.dto.RegisterResponse
+import com.example.jwtdemo.exception.ConflictException
 import com.example.jwtdemo.model.Role
 import com.example.jwtdemo.model.User
 import com.example.jwtdemo.persistence.UserPersistence
@@ -105,19 +106,36 @@ class AuthResource(
         jwtService.deleteRefreshTokenCookie(response)
     }
 
-        @PostMapping("/register")
-        fun register(@RequestBody request: AuthRequest): ResponseEntity<RegisterResponse>{
-            if (userPersistence.existsByUsername(request.username)) {
-                throw RuntimeException("Username already exists")
-            }
-            userPersistence.save(User(
+    @PostMapping("/register")
+    fun register(@RequestBody request: AuthRequest): ResponseEntity<RegisterResponse> {
+
+        // 1️⃣ Check duplicate username
+        if (userPersistence.existsByUsername(request.username)) {
+            throw ConflictException("Username already exists")
+        }
+
+        // 2️⃣ Convert role safely (case-insensitive)
+        val role = when (request.role.replace(" ", "").replace("-", "").uppercase()) {
+            "ADMIN" -> Role.ADMIN
+            "PROJECTMANAGER" -> Role.PROJECT_MANAGER
+            "TEAMMEMBER" -> Role.TEAM_MEMBER
+            else -> throw IllegalArgumentException("Invalid role: ${request.role}")
+        }
+
+
+        // 3️⃣ Save user
+        userPersistence.save(
+            User(
                 username = request.username,
                 password = encoder.encode(request.password),
-                role = if (request.role == Role.ADMIN.name) Role.ADMIN else Role.TEAM_MEMBER,
+                role = role,
                 email = request.email
-                  ))
-            return ResponseEntity
-                        .status(HttpStatus.CREATED)
-                        .body(RegisterResponse("User registered"))
-        }
+            )
+        )
+
+        // 4️⃣ Return response
+        return ResponseEntity
+            .status(HttpStatus.CREATED)
+            .body(RegisterResponse("User registered successfully"))
+    }
     }
