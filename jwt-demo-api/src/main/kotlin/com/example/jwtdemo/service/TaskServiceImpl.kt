@@ -3,6 +3,7 @@ package com.example.jwtdemo.service
 import com.example.jwtdemo.dto.TaskRequest
 import com.example.jwtdemo.dto.TaskResponse
 import com.example.jwtdemo.exception.NotFoundException
+import com.example.jwtdemo.mapper.toResponseDto
 import com.example.jwtdemo.model.Status
 import com.example.jwtdemo.model.Task
 import com.example.jwtdemo.persistence.ProjectPersistence
@@ -12,6 +13,7 @@ import com.example.jwtdemo.persistence.UserPersistence
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Service
@@ -191,6 +193,26 @@ open class TaskServiceImpl(
         }
 
         taskPersistence.delete(task)
+    }
+
+    @Transactional(readOnly = true)
+    fun getCompletedTasksPercentageByUserId(id: Long): Double {
+        val tasks = taskPersistence.findAllByUsersId(id)
+        if (tasks.isEmpty()) return 0.0
+
+        val completed = tasks.count { it.status == Status.DONE }
+        return (completed.toDouble() / tasks.size.toDouble()) * 100.0
+    }
+
+    @Transactional(readOnly = true)
+    fun getOverdueTasksByUserId(id: Long): List<TaskResponse> {
+        val tasks = taskPersistence.findAllByUsersId(id)
+        if (tasks.isEmpty()) return emptyList()
+
+        val today = LocalDate.now()
+        val overdue = tasks.filter { it.dueDate.isBefore(today) && it.status != Status.DONE }
+
+        return overdue.map { it.toResponseDto() }
     }
 
 

@@ -2,12 +2,13 @@ package com.example.jwtdemo.service
 
 import com.example.jwtdemo.dto.SprintRequest
 import com.example.jwtdemo.dto.SprintResponseDTO
-import com.example.jwtdemo.dto.TaskResponseDTO
-import com.example.jwtdemo.model.Project
+import com.example.jwtdemo.dto.TaskResponse
+import com.example.jwtdemo.exception.ConflictException
+import com.example.jwtdemo.exception.NotFoundException
+//import com.example.jwtdemo.dto.TaskResponseDTO
 import com.example.jwtdemo.model.Sprint
 import com.example.jwtdemo.persistence.ProjectPersistence
 import com.example.jwtdemo.persistence.SprintPersistence
-import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -21,13 +22,27 @@ class SprintServiceImpl(
 
     fun createSprint(request: SprintRequest): Sprint {
 
+        // Validate date order
         if (request.startDate.isAfter(request.endDate)) {
-            throw IllegalArgumentException("Start date must be before end date")
+            throw ConflictException("Start date must be before end date")
         }
 
+        //  Fetch project
         val project = projectPersistence.findById(request.projectId)
-            .orElseThrow { RuntimeException("Project not found") }
+            .orElseThrow { NotFoundException("Project not found with id ${request.projectId}") }
 
+        // Check overlapping sprints inside same project
+        val overlappingSprints = sprintPersistence.findOverlappingSprints(
+            projectId = request.projectId,
+            startDate = request.startDate,
+            endDate = request.endDate
+        )
+
+        if (overlappingSprints.isNotEmpty()) {
+            throw ConflictException("Sprint dates overlap with an existing sprint")
+        }
+
+        //  Create sprint
         val sprint = Sprint(
             name = request.name,
             startDate = request.startDate,
@@ -52,7 +67,7 @@ class SprintServiceImpl(
             startDate = sprint.startDate,
             endDate = sprint.endDate,
             tasks = sprint.tasks.map { task ->
-                TaskResponseDTO(
+                TaskResponse(
                     id = task.id,
                     title = task.title,
                     description = task.description,
@@ -61,7 +76,11 @@ class SprintServiceImpl(
                     dueDate = task.dueDate,
                     startDate = task.startDate,
                     isActive = task.isActive,
-                    userId = task.users.id
+                    userId = task.users.id,
+                    projectId = task.project.id,
+                    sprintId = task.sprint.id,
+                    createdDate = task.createdDate,
+                    updatedDate = task.updatedDate
                 )
             }
         )

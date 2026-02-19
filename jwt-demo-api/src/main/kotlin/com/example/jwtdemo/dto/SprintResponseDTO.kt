@@ -7,5 +7,5 @@ data class SprintResponseDTO(
     val name: String,
     val startDate: LocalDate,
     val endDate: LocalDate,
-    val tasks: List<TaskResponseDTO>
+    val tasks: List<TaskResponse>
 )

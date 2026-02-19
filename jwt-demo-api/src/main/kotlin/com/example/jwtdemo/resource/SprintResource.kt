@@ -2,6 +2,7 @@ package com.example.jwtdemo.resource
 
 import com.example.jwtdemo.dto.SprintRequest
 import com.example.jwtdemo.dto.SprintResponseDTO
+import com.example.jwtdemo.mapper.toResponseDtos
 import com.example.jwtdemo.model.Sprint
 import com.example.jwtdemo.service.SprintServiceImpl
 import org.springframework.http.ResponseEntity
@@ -47,7 +48,7 @@ class SprintResource(
     }
 
     @GetMapping("/getAllSprints")
-    fun getAllSprints(): List<Sprint> {
-            return sprintServiceImpl.getAllSprints()
+    fun getAllSprints(): List<SprintResponseDTO> {
+            return sprintServiceImpl.getAllSprints().toResponseDtos()
     }
 }

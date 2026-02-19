@@ -103,4 +103,35 @@ class TaskResouce(
         return ResponseEntity.ok(apiResponse)
     }
 
+    @GetMapping("/getCompletedTasksPercentage/{id}")
+    fun getCompletedTasksPercentage(@PathVariable id: Long): ResponseEntity<ApiResponse<Double>> {
+        val percentage = taskService.getCompletedTasksPercentageByUserId(id)
+
+        val apiResponse = ApiResponse(
+            status = HttpStatus.OK.value(),
+            success = true,
+            message = "Completed tasks percentage fetched successfully",
+            path = "",
+            data = percentage
+        )
+
+        return ResponseEntity.ok(apiResponse)
+    }
+
+    @GetMapping("/getOverdueTasksByUser/{id}")
+    fun getOverdueTasksByUser(@PathVariable id: Long): ResponseEntity<ApiResponse<List<TaskResponse>>> {
+        val response = taskService.getOverdueTasksByUserId(id)
+
+        val apiResponse = ApiResponse(
+            status = HttpStatus.OK.value(),
+            success = true,
+            message = "Overdue tasks fetched successfully",
+            path = "",
+            data = response
+        )
+
+        return ResponseEntity.ok(apiResponse)
+    }
+
+
 }
