@@ -2,46 +2,63 @@ package com.example.jwtdemo.service
 
 import com.example.jwtdemo.dto.TaskRequest
 import com.example.jwtdemo.dto.TaskResponse
+import com.example.jwtdemo.exception.NotFoundException
+import com.example.jwtdemo.model.Status
 import com.example.jwtdemo.model.Task
 import com.example.jwtdemo.persistence.ProjectPersistence
 import com.example.jwtdemo.persistence.SprintPersistence
 import com.example.jwtdemo.persistence.TaskPersistence
 import com.example.jwtdemo.persistence.UserPersistence
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
 @Service
-class TaskServiceImpl(private val taskPersistence : TaskPersistence,
-                      private val userPersistence: UserPersistence,
-                      private val sprintPersistence: SprintPersistence,
-                      private val projectPersistence: ProjectPersistence,) {
+open class TaskServiceImpl(
+    private val taskPersistence: TaskPersistence,
+    private val userPersistence: UserPersistence,
+    private val sprintPersistence: SprintPersistence,
+    private val projectPersistence: ProjectPersistence
+) {
 
-
+    private val log = LoggerFactory.getLogger(TaskServiceImpl::class.java)
 
     @Transactional
-    fun createTask(request: TaskRequest): TaskResponse {
+    open fun createTask(request: TaskRequest): TaskResponse {
 
-        //  Date validation
+        log.info("Creating task with title: {}", request.title)
+
+        // Date validation
         if (request.startDate.isAfter(request.dueDate)) {
+            log.error("Invalid date range: startDate {} is after dueDate {}", request.startDate, request.dueDate)
             throw IllegalArgumentException("Start date must be before due date")
         }
 
-        //  Fetch related entities
+        // Fetch User
         val user = userPersistence.findById(request.userId)
-            .orElseThrow { RuntimeException("User not found with id ${request.userId}") }
+            .orElseThrow {
+                log.error("User not found with id: {}", request.userId)
+                NotFoundException("User not found with id ${request.userId}")
+            }
 
+        // Fetch Project
         val project = projectPersistence.findById(request.projectId)
-            .orElseThrow { RuntimeException("Project not found with id ${request.projectId}") }
+            .orElseThrow {
+                log.error("Project not found with id: {}", request.projectId)
+                NotFoundException("Project not found with id ${request.projectId}")
+            }
 
+        // Fetch Sprint
         val sprint = sprintPersistence.findById(request.sprintId)
-            .orElseThrow { RuntimeException("Sprint not found with id ${request.sprintId}") }
+            .orElseThrow {
+                log.error("Sprint not found with id: {}", request.sprintId)
+                NotFoundException("Sprint not found with id ${request.sprintId}")
+            }
 
-        //  Create Task entity
         val task = Task(
             title = request.title,
             description = request.description,
-           // status = request.status,
             priority = request.priority,
             dueDate = request.dueDate,
             startDate = request.startDate,
@@ -53,12 +70,47 @@ class TaskServiceImpl(private val taskPersistence : TaskPersistence,
             updatedDate = LocalDateTime.now()
         )
 
-
         val savedTask = taskPersistence.save(task)
+
+        log.info("Task created successfully with id: {}", savedTask.id)
+
         return savedTask.toResponse()
     }
 
-    fun Task.toResponse(): TaskResponse {
+
+    @Transactional(readOnly = true)
+    open fun getTaskByUserId(id: Long): List<TaskResponse> {
+
+        log.info("Fetching tasks for user id: {}", id)
+
+        val tasks = taskPersistence.findAllByUsersId(id)
+
+        if (tasks.isEmpty()) {
+            log.warn("No tasks found for user id: {}", id)
+            throw NotFoundException("No tasks found for user id $id")
+        }
+
+        return tasks.map { it.toResponse() }
+    }
+
+
+    @Transactional(readOnly = true)
+    open fun getTaskBySprintId(id: Long): List<TaskResponse> {
+
+        log.info("Fetching tasks for sprint id: {}", id)
+
+        val tasks = taskPersistence.findAllBySprintId(id)
+
+        if (tasks.isEmpty()) {
+            log.warn("No tasks found for sprint id: {}", id)
+            throw NotFoundException("No tasks found for sprint id $id")
+        }
+
+        return tasks.map { it.toResponse() }
+    }
+
+
+    private fun Task.toResponse(): TaskResponse {
         return TaskResponse(
             id = this.id,
             title = this.title,
@@ -76,16 +128,77 @@ class TaskServiceImpl(private val taskPersistence : TaskPersistence,
         )
     }
 
+    @Transactional
+    open fun updateTask(taskId: Long, request: TaskRequest): TaskResponse {
 
-    @Transactional(readOnly = true)
-    fun getTaskByUserId(id : Long): List<TaskResponse> {
+        log.info("Updating task with id: {}", taskId)
 
-        val tasks = taskPersistence.findAllByUsersId(id)
+        // Fetch existing task
+        val task = taskPersistence.findById(taskId)
+            .orElseThrow {
+                log.error("Task not found with id: {}", taskId)
+                NotFoundException("Task not found with id $taskId")
+            }
 
-        if (tasks.isEmpty()) {
-            throw RuntimeException("No tasks found for user id $id")
+        // Date validation (if dates are being changed)
+        if (request.startDate.isAfter(request.dueDate)) {
+            log.error(
+                "Invalid date range: startDate {} is after dueDate {}",
+                request.startDate,
+                request.dueDate
+            )
+            throw IllegalArgumentException("Start date must be before due date")
         }
 
-        return tasks.map { it.toResponse() }
+        // Cannot move to DONE if existing status is BLOCKED
+        if (task.status == Status.BLOCKED &&
+            request.status == Status.DONE
+        ) {
+            log.warn(
+                "Invalid status transition BLOCKED -> DONE for task id {}",
+                taskId
+            )
+            throw IllegalStateException(
+                "Task cannot be changed to DONE while it is BLOCKED"
+            )
+        }
+
+
+
+
+        task.priority = request.priority
+        task.dueDate = request.dueDate
+        task.startDate = request.startDate
+        task.status = request.status
+        task.isActive = request.isActive
+        task.updatedDate = LocalDateTime.now()
+
+        val updatedTask = taskPersistence.save(task)
+
+        log.info("Task updated successfully with id: {}", updatedTask.id)
+
+        return updatedTask.toResponse()
     }
+
+    @Transactional
+    fun deleteTask(id: Long) {
+
+        val task = taskPersistence.findById(id)
+            .orElseThrow { RuntimeException("Task not found with id $id") }
+
+        if (task.status == Status.COMPLETED) {
+            throw IllegalStateException("Completed tasks cannot be deleted")
+        }
+
+        taskPersistence.delete(task)
+    }
+
+
+
 }
+
+
+
+
+
+

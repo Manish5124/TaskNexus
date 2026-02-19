@@ -7,7 +7,7 @@ enum class Role {
 }
 
 enum class Status {
-    TODO, IN_PROGRESS, DONE
+    TODO, IN_PROGRESS, DONE, COMPLETED,BLOCKED
 }
 
 enum class Priority {

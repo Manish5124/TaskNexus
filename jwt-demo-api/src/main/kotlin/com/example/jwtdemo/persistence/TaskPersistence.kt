@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 interface TaskPersistence:JpaRepository<Task, Long> {
 
     fun findAllByUsersId(userId: Long): List<Task>
+
+    fun findAllBySprintId(sprintId: Long): List<Task>
 }
