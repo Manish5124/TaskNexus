@@ -34,7 +34,8 @@ class User(
     val isActive: Boolean = true,
 
     @OneToMany(mappedBy = "users", cascade = [CascadeType.ALL])
-    val tasks: List<Task> = mutableListOf(),
+    @JsonIgnore
+    val tasks: List<Task> = listOf(),
 
     @OneToMany(mappedBy = "users", cascade = [CascadeType.ALL])
     @JsonIgnore

@@ -1,6 +1,8 @@
 package com.example.jwtdemo.service
 
 import com.example.jwtdemo.dto.SprintRequest
+import com.example.jwtdemo.dto.SprintResponseDTO
+import com.example.jwtdemo.dto.TaskResponseDTO
 import com.example.jwtdemo.model.Project
 import com.example.jwtdemo.model.Sprint
 import com.example.jwtdemo.persistence.ProjectPersistence
@@ -39,11 +41,34 @@ class SprintServiceImpl(
     }
 
 
-    fun getSprintsById(id: Long): Sprint? {
-        return sprintPersistence.findById(id).orElse(null)
+    fun getSprintsById(id: Long): SprintResponseDTO? {
+
+        val sprint = sprintPersistence.findById(id).orElse(null)
+            ?: return null
+
+        return SprintResponseDTO(
+            id = sprint.id,
+            name = sprint.name,
+            startDate = sprint.startDate,
+            endDate = sprint.endDate,
+            tasks = sprint.tasks.map { task ->
+                TaskResponseDTO(
+                    id = task.id,
+                    title = task.title,
+                    description = task.description,
+                    status = task.status,
+                    priority = task.priority,
+                    dueDate = task.dueDate,
+                    startDate = task.startDate,
+                    isActive = task.isActive,
+                    userId = task.users.id
+                )
+            }
+        )
     }
 
-     fun getAllSprints(): List<Sprint> {
+
+    fun getAllSprints(): List<Sprint> {
             return sprintPersistence.findAll();
      }
 

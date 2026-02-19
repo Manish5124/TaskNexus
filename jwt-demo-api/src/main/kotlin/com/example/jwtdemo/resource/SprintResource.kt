@@ -1,6 +1,7 @@
 package com.example.jwtdemo.resource
 
 import com.example.jwtdemo.dto.SprintRequest
+import com.example.jwtdemo.dto.SprintResponseDTO
 import com.example.jwtdemo.model.Sprint
 import com.example.jwtdemo.service.SprintServiceImpl
 import org.springframework.http.ResponseEntity
@@ -28,15 +29,13 @@ class SprintResource(
     }
 
     @GetMapping("/getSprintById/{id}")
-    fun getSprintById(@PathVariable id: Long): ResponseEntity<Sprint> {
+    fun getSprintById(@PathVariable id: Long): ResponseEntity<SprintResponseDTO> {
 
         val sprint = sprintServiceImpl.getSprintsById(id)
 
-        return if (sprint != null) {
-            ResponseEntity.ok(sprint)
-        } else {
-            ResponseEntity.notFound().build()
-        }
+        return sprint?.let {
+            ResponseEntity.ok(it)
+        } ?: ResponseEntity.notFound().build()
     }
 
     @PutMapping("/updateSprintById/{id}")
