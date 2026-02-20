@@ -2,6 +2,7 @@ package com.example.jwtdemo.resource
 
 import com.example.jwtdemo.dto.SprintRequest
 import com.example.jwtdemo.dto.SprintResponseDTO
+import com.example.jwtdemo.dto.UpdateSprintRequest
 import com.example.jwtdemo.mapper.toResponseDto
 import com.example.jwtdemo.mapper.toResponseDtos
 import com.example.jwtdemo.service.SprintService
@@ -50,7 +51,7 @@ class SprintResource(
     @PutMapping("/updateSprintById/{id}")
     fun updateSprint(
         @PathVariable id: Long,
-        @RequestBody request: SprintRequest
+        @RequestBody request: UpdateSprintRequest
     ): SprintResponseDTO {
 
         log.info("Update sprint request received for id: {}", id)
