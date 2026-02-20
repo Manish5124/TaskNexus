@@ -1,12 +1,10 @@
 package com.example.jwtdemo.dto
 
-import jakarta.validation.constraints.NotBlank
 import java.time.LocalDate
 
-data class SprintRequest(
+data class UpdateSprintRequest(
     val id: Long? = null,
     val name: String,
     val startDate: LocalDate,
     val endDate: LocalDate,
-    var projectId: Long
 )

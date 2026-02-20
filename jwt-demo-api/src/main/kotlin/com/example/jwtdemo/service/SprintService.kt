@@ -3,6 +3,7 @@ package com.example.jwtdemo.service
 import com.example.jwtdemo.dto.SprintRequest
 import com.example.jwtdemo.dto.SprintResponseDTO
 import com.example.jwtdemo.dto.TaskResponse
+import com.example.jwtdemo.dto.UpdateSprintRequest
 import com.example.jwtdemo.exception.ConflictException
 import com.example.jwtdemo.exception.NotFoundException
 import com.example.jwtdemo.model.Sprint
@@ -138,7 +139,7 @@ class SprintService(
     }
 
     @Transactional
-    fun updateSprint(id: Long, request: SprintRequest): Sprint {
+    fun updateSprint(id: Long, request: UpdateSprintRequest): Sprint {
 
         log.info("Updating sprint with id {}", id)
 
@@ -158,16 +159,9 @@ class SprintService(
             throw IllegalArgumentException("Start date must be before end date")
         }
 
-        val project = projectPersistence.findById(request.projectId)
-            .orElseThrow {
-                log.error("Project not found with id {}", request.projectId)
-                RuntimeException("Project not found")
-            }
-
         existingSprint.name = request.name
         existingSprint.startDate = request.startDate
         existingSprint.endDate = request.endDate
-        existingSprint.project = project
         existingSprint.updatedDate = LocalDateTime.now()
 
         val updatedSprint = sprintPersistence.save(existingSprint)
