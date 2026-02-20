@@ -170,4 +170,13 @@ class SprintService(
 
         return updatedSprint
     }
+
+    @Transactional
+    fun deleteSprintById(id: Long) {
+
+        val sprint = sprintPersistence.findById(id)
+            .orElseThrow { RuntimeException("Sprint not found with id $id") }
+
+        sprintPersistence.delete(sprint)
+    }
 }

@@ -87,4 +87,17 @@ class SprintResource(
         return ResponseEntity.ok(sprintCount)
     }
 
+
+    @DeleteMapping("/deleteSprintById/{id}")
+    fun deleteSprintById(@PathVariable id: Long): ResponseEntity<String> {
+
+        log.info("Request received to delete sprint with id: {}", id)
+
+        sprintServiceImpl.deleteSprintById(id)
+
+        log.info("Sprint deleted successfully with id: {}", id)
+
+        return ResponseEntity.ok("Sprint deleted successfully")
+    }
+
 }

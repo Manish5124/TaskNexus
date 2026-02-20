@@ -1,9 +1,11 @@
 package com.example.jwtdemo.resource
 
+import com.example.jwtdemo.dto.ApiResponse
 import com.example.jwtdemo.dto.AuthRequest
 import com.example.jwtdemo.dto.AuthResponse
 import com.example.jwtdemo.dto.LoginRequest
 import com.example.jwtdemo.dto.RegisterResponse
+import com.example.jwtdemo.dto.UserResponseDTO
 import com.example.jwtdemo.exception.ConflictException
 import com.example.jwtdemo.model.Role
 import com.example.jwtdemo.model.User
@@ -180,5 +182,24 @@ class AuthResource(
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(RegisterResponse("User registered successfully"))
+ }
+
+
+    @GetMapping("/users/by-role/{roleName}")
+    fun getAllMembersByRole(
+        @PathVariable roleName: String
+    ): ResponseEntity<ApiResponse<List<UserResponseDTO>>> {
+
+        val users = jwtService.getAllMembersByRole(roleName)
+
+        val response = ApiResponse(
+            status = 200,
+            success = true,
+            message = "Users fetched successfully",
+            path = "",
+            data = users
+        )
+
+        return ResponseEntity.ok(response)
     }
 }
