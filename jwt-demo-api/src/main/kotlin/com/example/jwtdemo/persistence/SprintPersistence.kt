@@ -19,4 +19,5 @@ interface SprintPersistence:JpaRepository<Sprint, Long> {
         endDate: LocalDate
     ): List<Sprint>
 
+    fun countByProjectId(projectId: Long): Long
 }

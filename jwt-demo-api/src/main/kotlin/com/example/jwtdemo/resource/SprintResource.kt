@@ -4,40 +4,47 @@ import com.example.jwtdemo.dto.SprintRequest
 import com.example.jwtdemo.dto.SprintResponseDTO
 import com.example.jwtdemo.mapper.toResponseDto
 import com.example.jwtdemo.mapper.toResponseDtos
-import com.example.jwtdemo.model.Sprint
-import com.example.jwtdemo.service.SprintServiceImpl
+import com.example.jwtdemo.service.SprintService
+import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/sprint")
 class SprintResource(
-    private val sprintServiceImpl: SprintServiceImpl
+    private val sprintServiceImpl: SprintService
 ) {
+
+    private val log = LoggerFactory.getLogger(SprintResource::class.java)
 
     @PostMapping("/createSprint")
     fun createSprint(
         @RequestBody sprintRequest: SprintRequest
     ): ResponseEntity<String> {
 
-         sprintServiceImpl.createSprint(sprintRequest)
+        log.info("Create sprint request received. Sprint name: {}", sprintRequest.name)
+
+        sprintServiceImpl.createSprint(sprintRequest)
+
+        log.info("Sprint created successfully. Sprint name: {}", sprintRequest.name)
+
         return ResponseEntity.ok("Sprints saved successfully")
     }
 
     @GetMapping("/getSprintById/{id}")
     fun getSprintById(@PathVariable id: Long): ResponseEntity<SprintResponseDTO> {
 
+        log.info("Fetching sprint with id: {}", id)
+
         val sprint = sprintServiceImpl.getSprintsById(id)
 
         return sprint?.let {
+            log.info("Sprint found with id: {}", id)
             ResponseEntity.ok(it)
-        } ?: ResponseEntity.notFound().build()
+        } ?: run {
+            log.warn("Sprint not found with id: {}", id)
+            ResponseEntity.notFound().build()
+        }
     }
 
     @PutMapping("/updateSprintById/{id}")
@@ -45,11 +52,38 @@ class SprintResource(
         @PathVariable id: Long,
         @RequestBody request: SprintRequest
     ): SprintResponseDTO {
-        return sprintServiceImpl.updateSprint(id, request).toResponseDto()
+
+        log.info("Update sprint request received for id: {}", id)
+
+        val updatedSprint = sprintServiceImpl.updateSprint(id, request)
+
+        log.info("Sprint updated successfully for id: {}", id)
+
+        return updatedSprint.toResponseDto()
     }
 
     @GetMapping("/getAllSprints")
     fun getAllSprints(): List<SprintResponseDTO> {
-            return sprintServiceImpl.getAllSprints().toResponseDtos()
+
+        log.info("Fetching all sprints")
+
+        val sprints = sprintServiceImpl.getAllSprints()
+
+        log.info("Total sprints fetched: {}", sprints.size)
+
+        return sprints.toResponseDtos()
     }
+
+    @GetMapping("/getSprintSizeByProjectId/{projectId}")
+    fun getSprintSizeByProjectId(@PathVariable projectId: Long): ResponseEntity<Long> {
+
+        log.info("Fetching sprint size for project id: {}", projectId)
+
+        val sprintCount = sprintServiceImpl.getSprintSizeByProjectId(projectId)
+
+        log.info("Sprint count for project id {}: {}", projectId, sprintCount)
+
+        return ResponseEntity.ok(sprintCount)
+    }
+
 }
