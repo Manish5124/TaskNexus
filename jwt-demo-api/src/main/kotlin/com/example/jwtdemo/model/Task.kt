@@ -1,5 +1,6 @@
 package com.example.jwtdemo.model
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -46,6 +47,7 @@ class Task(
 
     @ManyToOne
     @JoinColumn(name = "sprint_id")
+    @JsonIgnore
     var sprint: Sprint,
 
     var createdDate: LocalDateTime = LocalDateTime.now(),

@@ -2,7 +2,9 @@ package com.example.jwtdemo.resource
 
 import com.example.jwtdemo.dto.AuthRequest
 import com.example.jwtdemo.dto.AuthResponse
+import com.example.jwtdemo.dto.LoginRequest
 import com.example.jwtdemo.dto.RegisterResponse
+import com.example.jwtdemo.exception.ConflictException
 import com.example.jwtdemo.model.Role
 import com.example.jwtdemo.model.User
 import com.example.jwtdemo.persistence.UserPersistence
@@ -10,13 +12,11 @@ import com.example.jwtdemo.service.JwtService
 import jakarta.annotation.PostConstruct
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 
 @RestController
@@ -27,9 +27,15 @@ class AuthResource(
     private val encoder: PasswordEncoder
 ) {
 
+    private val log = LoggerFactory.getLogger(AuthResource::class.java)
+
     @PostConstruct
     fun init() {
+        log.info("Initializing default users if database is empty")
+
         if (userPersistence.count() == 0L) {
+            log.info("No users found. Creating default users")
+
             userPersistence.save(
                 User(
                     username = "admin",
@@ -38,6 +44,7 @@ class AuthResource(
                     email = "admin@gmail.com"
                 )
             )
+
             userPersistence.save(
                 User(
                     username = "teammember",
@@ -46,6 +53,7 @@ class AuthResource(
                     email = "teammember@gmail.com"
                 )
             )
+
             userPersistence.save(
                 User(
                     username = "projectmanager",
@@ -54,46 +62,74 @@ class AuthResource(
                     email = "projectmanager@gmail.com"
                 )
             )
+
+            log.info("Default users created successfully")
         }
     }
 
-        @PostMapping("/login")
-        fun login(@RequestBody request: AuthRequest,
-                  response: HttpServletResponse): AuthResponse{
-            val user = userPersistence.findByUsername(request.username)
-                ?: throw RuntimeException("Invalid credentials")
+    @PostMapping("/login")
+    fun login(
+        @RequestBody request: LoginRequest,
+        response: HttpServletResponse
+    ): AuthResponse {
 
-            if(!encoder.matches(request.password, user.password)){
+        log.info("Login attempt for username: {}", request.username)
+
+        val user = userPersistence.findByUsername(request.username)
+            ?: run {
+                log.warn("Login failed. User not found: {}", request.username)
                 throw RuntimeException("Invalid credentials")
             }
 
-            val accessToken = jwtService.generateAccessToken(user.username, user.role.name)
-            val refreshToken = jwtService.generateRefreshToken(user.username)
-
-            jwtService.addRefreshTokenCookie(response, refreshToken)
-
-            return AuthResponse(
-                accessToken = accessToken,
-                role = user.role.name
-            )
+        if (!encoder.matches(request.password, user.password)) {
+            log.warn("Login failed. Invalid password for username: {}", request.username)
+            throw RuntimeException("Invalid credentials")
         }
 
+        val accessToken = jwtService.generateAccessToken(user.username, user.role.name)
+        val refreshToken = jwtService.generateRefreshToken(user.username)
+
+        jwtService.addRefreshTokenCookie(response, refreshToken)
+
+        log.info("Login successful for username: {}", request.username)
+
+        return AuthResponse(
+            accessToken = accessToken,
+            role = user.role.name
+        )
+    }
+
     @PostMapping("/refresh")
-    fun refresh(request: HttpServletRequest,
-              response: HttpServletResponse): AuthResponse{
+    fun refresh(
+        request: HttpServletRequest,
+        response: HttpServletResponse
+    ): AuthResponse {
+
+        log.info("Refresh token request received")
 
         val refreshToken = request.cookies
-            ?.firstOrNull { it.name == "refreshToken"}
+            ?.firstOrNull { it.name == "refreshToken" }
             ?.value
-            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
-        val username = jwtService.extractUsername(refreshToken);
+            ?: run {
+                log.warn("Refresh failed. No refresh token cookie found")
+                throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
+            }
+
+        val username = jwtService.extractUsername(refreshToken)
 
         val user = userPersistence.findByUsername(username)
-            ?: throw RuntimeException("Invalid credentials")
+            ?: run {
+                log.warn("Refresh failed. User not found: {}", username)
+                throw RuntimeException("Invalid credentials")
+            }
 
         val newAccessToken = jwtService.generateAccessToken(user.username, user.role.name)
         val newRefreshToken = jwtService.generateRefreshToken(user.username)
+
         jwtService.addRefreshTokenCookie(response, newRefreshToken)
+
+        log.info("Token refreshed successfully for username: {}", username)
+
         return AuthResponse(
             accessToken = newAccessToken,
             role = user.role.name
@@ -101,23 +137,48 @@ class AuthResource(
     }
 
     @PostMapping("/logout")
-    fun logout(response: HttpServletResponse){
+    fun logout(response: HttpServletResponse) {
+
+        log.info("Logout request received")
+
         jwtService.deleteRefreshTokenCookie(response)
+
+        log.info("User logged out successfully (refresh token cookie deleted)")
     }
 
-        @PostMapping("/register")
-        fun register(@RequestBody request: AuthRequest): ResponseEntity<RegisterResponse>{
-            if (userPersistence.existsByUsername(request.username)) {
-                throw RuntimeException("Username already exists")
+    @PostMapping("/register")
+    fun register(@RequestBody request: AuthRequest): ResponseEntity<RegisterResponse> {
+
+        log.info("Register request received for username: {}", request.username)
+
+        if (userPersistence.existsByUsername(request.username)) {
+            log.warn("Registration failed. Username already exists: {}", request.username)
+            throw ConflictException("Username already exists")
+        }
+
+        val role = when (request.role.replace(" ", "").replace("-", "").uppercase()) {
+            "ADMIN" -> Role.ADMIN
+            "PROJECTMANAGER" -> Role.PROJECT_MANAGER
+            "TEAMMEMBER" -> Role.TEAM_MEMBER
+            else -> {
+                log.error("Invalid role provided: {}", request.role)
+                throw IllegalArgumentException("Invalid role: ${request.role}")
             }
-            userPersistence.save(User(
+        }
+
+        userPersistence.save(
+            User(
                 username = request.username,
                 password = encoder.encode(request.password),
-                role = if (request.role == Role.ADMIN.name) Role.ADMIN else Role.TEAM_MEMBER,
+                role = role,
                 email = request.email
-                  ))
-            return ResponseEntity
-                        .status(HttpStatus.CREATED)
-                        .body(RegisterResponse("User registered"))
-        }
+            )
+        )
+
+        log.info("User registered successfully with username: {}", request.username)
+
+        return ResponseEntity
+            .status(HttpStatus.CREATED)
+            .body(RegisterResponse("User registered successfully"))
     }
+}

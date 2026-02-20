@@ -7,5 +7,7 @@ data class ProjectResponse(
     val name: String,
     val description: String,
     val isActive: Boolean,
-    val createdDate: LocalDateTime
+    val createdDate: LocalDateTime,
+    val sprints: List<SprintResponseDTO>,
+    val tasks: List<TaskResponse>
 )
