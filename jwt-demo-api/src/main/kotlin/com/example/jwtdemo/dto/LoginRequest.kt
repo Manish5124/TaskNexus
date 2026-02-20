@@ -1,0 +1,4 @@
+package com.example.jwtdemo.dto
+
+data class LoginRequest(val username: String,
+                        val password: String)

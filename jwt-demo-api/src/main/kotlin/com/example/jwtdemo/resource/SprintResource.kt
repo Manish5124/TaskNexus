@@ -2,6 +2,7 @@ package com.example.jwtdemo.resource
 
 import com.example.jwtdemo.dto.SprintRequest
 import com.example.jwtdemo.dto.SprintResponseDTO
+import com.example.jwtdemo.mapper.toResponseDto
 import com.example.jwtdemo.mapper.toResponseDtos
 import com.example.jwtdemo.model.Sprint
 import com.example.jwtdemo.service.SprintServiceImpl
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping("/api/sprint")
 class SprintResource(
     private val sprintServiceImpl: SprintServiceImpl
 ) {
@@ -43,8 +44,8 @@ class SprintResource(
     fun updateSprint(
         @PathVariable id: Long,
         @RequestBody request: SprintRequest
-    ): Sprint {
-        return sprintServiceImpl.updateSprint(id, request)
+    ): SprintResponseDTO {
+        return sprintServiceImpl.updateSprint(id, request).toResponseDto()
     }
 
     @GetMapping("/getAllSprints")

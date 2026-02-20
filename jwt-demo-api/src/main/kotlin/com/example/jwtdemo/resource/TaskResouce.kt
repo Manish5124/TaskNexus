@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping("/api/task")
 class TaskResouce(
     private val taskService: TaskServiceImpl
 ) {
@@ -121,7 +121,6 @@ class TaskResouce(
     @GetMapping("/getOverdueTasksByUser/{id}")
     fun getOverdueTasksByUser(@PathVariable id: Long): ResponseEntity<ApiResponse<List<TaskResponse>>> {
         val response = taskService.getOverdueTasksByUserId(id)
-
         val apiResponse = ApiResponse(
             status = HttpStatus.OK.value(),
             success = true,
@@ -129,7 +128,6 @@ class TaskResouce(
             path = "",
             data = response
         )
-
         return ResponseEntity.ok(apiResponse)
     }
 

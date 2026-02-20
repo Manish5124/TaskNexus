@@ -2,6 +2,7 @@ package com.example.jwtdemo.resource
 
 import com.example.jwtdemo.dto.AuthRequest
 import com.example.jwtdemo.dto.AuthResponse
+import com.example.jwtdemo.dto.LoginRequest
 import com.example.jwtdemo.dto.RegisterResponse
 import com.example.jwtdemo.exception.ConflictException
 import com.example.jwtdemo.model.Role
@@ -59,7 +60,7 @@ class AuthResource(
     }
 
         @PostMapping("/login")
-        fun login(@RequestBody request: AuthRequest,
+        fun login(@RequestBody request: LoginRequest,
                   response: HttpServletResponse): AuthResponse{
             val user = userPersistence.findByUsername(request.username)
                 ?: throw RuntimeException("Invalid credentials")
@@ -109,12 +110,10 @@ class AuthResource(
     @PostMapping("/register")
     fun register(@RequestBody request: AuthRequest): ResponseEntity<RegisterResponse> {
 
-        // 1️⃣ Check duplicate username
         if (userPersistence.existsByUsername(request.username)) {
             throw ConflictException("Username already exists")
         }
 
-        // 2️⃣ Convert role safely (case-insensitive)
         val role = when (request.role.replace(" ", "").replace("-", "").uppercase()) {
             "ADMIN" -> Role.ADMIN
             "PROJECTMANAGER" -> Role.PROJECT_MANAGER
@@ -122,8 +121,6 @@ class AuthResource(
             else -> throw IllegalArgumentException("Invalid role: ${request.role}")
         }
 
-
-        // 3️⃣ Save user
         userPersistence.save(
             User(
                 username = request.username,
@@ -133,7 +130,6 @@ class AuthResource(
             )
         )
 
-        // 4️⃣ Return response
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(RegisterResponse("User registered successfully"))

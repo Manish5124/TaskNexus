@@ -66,7 +66,6 @@ open class ProjectService(
     }
 
 
-    // assign team and project manager
     @Transactional
     open fun createAndAssignMember(
         projectId: Long,

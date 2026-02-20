@@ -59,9 +59,13 @@ class SecurityConfig(
                     "/api/auth/**",
                     "/h2-console/**"
                 ).permitAll()
-                it.requestMatchers("/api/admin/**")
-                    .hasRole(Role.ADMIN.name)
                 it.requestMatchers("/api/project/**")
+                    .hasRole(Role.ADMIN.name)
+                it.requestMatchers("/api/sprint/**")
+                    .hasRole(Role.PROJECT_MANAGER.name)
+                it.requestMatchers("/api/task/**")
+                    .hasAnyRole(Role.PROJECT_MANAGER.name,Role.TEAM_MEMBER.name)
+                it.requestMatchers("/api/admin/**")
                     .hasRole(Role.ADMIN.name)
                 it.requestMatchers("/api/users/**")
                     .hasAnyRole(Role.ADMIN.name, Role.TEAM_MEMBER.name)
