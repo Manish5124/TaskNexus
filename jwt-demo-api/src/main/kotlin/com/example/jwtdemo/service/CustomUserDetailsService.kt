@@ -1,5 +1,6 @@
 package com.example.jwtdemo.service
 
+import com.example.jwtdemo.dto.UserSummary
 import com.example.jwtdemo.persistence.UserPersistence
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.User
@@ -21,4 +22,9 @@ class CustomUserDetailsService(
                 listOf(SimpleGrantedAuthority("ROLE_${user.role}"))
             )
     }
+
+    fun getAllUsers(): List<UserSummary> {
+        return userPersistence.findAll().map { domainUser -> UserSummary(domainUser.id, domainUser.username) }
+    }
+
 }

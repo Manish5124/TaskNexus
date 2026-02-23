@@ -30,7 +30,7 @@ class SecurityConfig(
 
         val source = UrlBasedCorsConfigurationSource()
         source.registerCorsConfiguration("/**", config)
-        return source;
+        return source
     }
 
     @Bean
@@ -59,6 +59,12 @@ class SecurityConfig(
                     "/api/auth/**",
                     "/h2-console/**"
                 ).permitAll()
+
+                it.requestMatchers(
+                    "/api/project",
+                    "/api/sprint/getAllSprints",
+                    "/api/auth/users"
+                ).hasAnyRole(Role.PROJECT_MANAGER.name,Role.TEAM_MEMBER.name)
                 it.requestMatchers("/api/project/**")
                     .hasRole(Role.ADMIN.name)
                 it.requestMatchers("/api/sprint/**")

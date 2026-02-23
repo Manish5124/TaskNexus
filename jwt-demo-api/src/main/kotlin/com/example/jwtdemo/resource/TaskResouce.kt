@@ -1,8 +1,11 @@
 package com.example.jwtdemo.resource
 
 import com.example.jwtdemo.dto.ApiResponse
+import com.example.jwtdemo.dto.ProjectResponse
+import com.example.jwtdemo.dto.SprintResponseDTO
 import com.example.jwtdemo.dto.TaskRequest
 import com.example.jwtdemo.dto.TaskResponse
+import com.example.jwtdemo.mapper.toResponseDtos
 import com.example.jwtdemo.service.TaskService
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
@@ -158,4 +161,26 @@ class TaskResouce(
 
         return ResponseEntity.ok(apiResponse)
     }
+
+    @GetMapping("/getAllTasks")
+    fun getAllTasks(): ResponseEntity<List<TaskResponse>> {
+        val tasks = taskService.getAllTasks()
+        return ResponseEntity.ok(tasks.toResponseDtos())
+    }
+
+    @GetMapping("/getSprintByProjectId/{projectId}")
+    fun getSprintsByProjectId(@PathVariable projectId: Long): ResponseEntity<List<SprintResponseDTO>> {
+        log.info("Fetching sprints for project id: {}", projectId)
+
+        val sprints = taskService.getSprintsByProjectId(projectId)
+
+        if (sprints.isEmpty()) {
+            log.warn("No sprints found for project id: {}", projectId)
+            return ResponseEntity.notFound().build()
+        }
+
+        log.info("Found {} sprints for project id: {}", sprints.size, projectId)
+        return ResponseEntity.ok(sprints)
+    }
+
 }

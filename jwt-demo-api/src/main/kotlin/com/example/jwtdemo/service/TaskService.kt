@@ -1,9 +1,12 @@
 package com.example.jwtdemo.service
 
+import com.example.jwtdemo.dto.SprintResponseDTO
 import com.example.jwtdemo.dto.TaskRequest
 import com.example.jwtdemo.dto.TaskResponse
 import com.example.jwtdemo.exception.NotFoundException
 import com.example.jwtdemo.mapper.toResponseDto
+import com.example.jwtdemo.mapper.toResponseDtos
+import com.example.jwtdemo.model.Sprint
 import com.example.jwtdemo.model.Status
 import com.example.jwtdemo.model.Task
 import com.example.jwtdemo.persistence.ProjectPersistence
@@ -120,21 +123,39 @@ open class TaskService(
                 NotFoundException("Task not found with id $taskId")
             }
 
+        // Validate dates
         if (request.startDate.isAfter(request.dueDate)) {
             log.error("Invalid date range: startDate {} is after dueDate {}", request.startDate, request.dueDate)
             throw IllegalArgumentException("Start date must be before due date")
         }
 
+        // Validate status transition
         if (task.status == Status.BLOCKED && request.status == Status.DONE) {
             log.warn("Invalid status transition BLOCKED -> DONE for task id {}", taskId)
             throw IllegalStateException("Task cannot be changed to DONE while it is BLOCKED")
         }
 
+        // Fetch related entities
+        val project = projectPersistence.findById(request.projectId)
+            .orElseThrow { NotFoundException("Project not found with id ${request.projectId}") }
+
+        val user = userPersistence.findById(request.userId)
+            .orElseThrow { NotFoundException("User not found with id ${request.userId}") }
+
+        val sprint = sprintPersistence.findById(request.sprintId)
+            .orElseThrow { NotFoundException("Sprint not found with id ${request.sprintId}") }
+
+        // Update fields
+        task.title = request.title
+        task.description = request.description
         task.priority = request.priority
         task.dueDate = request.dueDate
         task.startDate = request.startDate
         task.status = request.status
         task.isActive = request.isActive
+        task.project = project
+        task.users = user
+        task.sprint = sprint
         task.updatedDate = LocalDateTime.now()
 
         val updatedTask = taskPersistence.save(task)
@@ -206,6 +227,59 @@ open class TaskService(
 
         return overdue.map { it.toResponseDto() }
     }
+
+    fun getAllTasks(): List<Task> {
+
+        log.info("Fetching all tasks")
+
+        val tasks = taskPersistence.findAll()
+
+        log.info("Total tasks fetched: {}", tasks.size)
+
+        return tasks
+    }
+
+    fun getSprintsByProjectId(projectId: Long): List<SprintResponseDTO> {
+        log.info("Fetching sprints for project id {}", projectId)
+
+        val sprints = sprintPersistence.findAllByProjectId(projectId)
+
+        if (sprints.isEmpty()) {
+            log.warn("No sprints found for project id: {}", projectId)
+            throw NotFoundException("No sprints found for this project")
+        }
+
+        return sprints.map { sprint ->
+            SprintResponseDTO(
+                id = sprint.id,
+                name = sprint.name,
+                startDate = sprint.startDate,
+                endDate = sprint.endDate,
+                tasks = sprint.tasks.map { task ->
+                    TaskResponse(
+                        id = task.id,
+                        title = task.title,
+                        description = task.description,
+                        status = task.status,
+                        priority = task.priority,
+                        dueDate = task.dueDate,
+                        startDate = task.startDate,
+                        isActive = task.isActive,
+                        userId = task.users.id,
+                        projectId = task.project.id,
+                        sprintId = task.sprint.id,
+                        createdDate = task.createdDate,
+                        updatedDate = task.updatedDate,
+                        projectName = task.project.name,
+                        sprintName = task.sprint.name,
+                        username = task.users.username
+                    )
+                }
+            )
+        }
+    }
+
+
 }
 
 

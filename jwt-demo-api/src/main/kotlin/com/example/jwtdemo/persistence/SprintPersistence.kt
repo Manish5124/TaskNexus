@@ -21,4 +21,5 @@ interface SprintPersistence:JpaRepository<Sprint, Long> {
 
     fun countByProjectId(projectId: Long): Long
 
+    fun findAllByProjectId(projectId: Long): List<Sprint>
 }

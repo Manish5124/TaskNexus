@@ -75,6 +75,7 @@ class SprintResource(
         return sprints.toResponseDtos()
     }
 
+
     @GetMapping("/getSprintSizeByProjectId/{projectId}")
     fun getSprintSizeByProjectId(@PathVariable projectId: Long): ResponseEntity<Long> {
 

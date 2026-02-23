@@ -24,12 +24,17 @@ data class TaskResponse(
 
     val userId: Long,
 
+    val username: String,
+
     val projectId: Long,
+
+    val projectName: String,
 
     val sprintId: Long,
 
+    val sprintName: String,
+
     val createdDate: LocalDateTime,
 
-    val updatedDate: LocalDateTime
-
+    val updatedDate: LocalDateTime,
 )

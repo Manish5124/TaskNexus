@@ -1,15 +1,15 @@
 package com.example.jwtdemo.resource
 
-import com.example.jwtdemo.dto.ApiResponse
 import com.example.jwtdemo.dto.AuthRequest
 import com.example.jwtdemo.dto.AuthResponse
 import com.example.jwtdemo.dto.LoginRequest
 import com.example.jwtdemo.dto.RegisterResponse
-import com.example.jwtdemo.dto.UserResponseDTO
+import com.example.jwtdemo.dto.UserSummary
 import com.example.jwtdemo.exception.ConflictException
 import com.example.jwtdemo.model.Role
 import com.example.jwtdemo.model.User
 import com.example.jwtdemo.persistence.UserPersistence
+import com.example.jwtdemo.service.CustomUserDetailsService
 import com.example.jwtdemo.service.JwtService
 import jakarta.annotation.PostConstruct
 import jakarta.servlet.http.HttpServletRequest
@@ -26,7 +26,8 @@ import org.springframework.web.server.ResponseStatusException
 class AuthResource(
     private val userPersistence: UserPersistence,
     private val jwtService: JwtService,
-    private val encoder: PasswordEncoder
+    private val encoder: PasswordEncoder,
+    private val customUserDetailsService: CustomUserDetailsService
 ) {
 
     private val log = LoggerFactory.getLogger(AuthResource::class.java)
@@ -182,24 +183,12 @@ class AuthResource(
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(RegisterResponse("User registered successfully"))
- }
+    }
 
-
-    @GetMapping("/users/by-role/{roleName}")
-    fun getAllMembersByRole(
-        @PathVariable roleName: String
-    ): ResponseEntity<ApiResponse<List<UserResponseDTO>>> {
-
-        val users = jwtService.getAllMembersByRole(roleName)
-
-        val response = ApiResponse(
-            status = 200,
-            success = true,
-            message = "Users fetched successfully",
-            path = "",
-            data = users
-        )
-
-        return ResponseEntity.ok(response)
+    @GetMapping("/users")
+    fun getAllUsers(): ResponseEntity<List<UserSummary>> {
+        log.info("Fetching all usernames")
+        val usernames = customUserDetailsService.getAllUsers()
+        return ResponseEntity.ok(usernames)
     }
 }
