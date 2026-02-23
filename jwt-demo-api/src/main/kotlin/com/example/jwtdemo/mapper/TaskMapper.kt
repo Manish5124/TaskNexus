@@ -49,7 +49,10 @@ fun Task.toResponseDto(): TaskResponse =
         projectId = this.project.id,
         sprintId = this.sprint.id,
         createdDate = this.createdDate,
-        updatedDate = this.updatedDate
+        updatedDate = this.updatedDate,
+        projectName = this.project.name,
+        sprintName = this.sprint.name,
+        username = this.users.username,
     )
 
 

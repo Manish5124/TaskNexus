@@ -4,10 +4,12 @@ import com.example.jwtdemo.dto.AuthRequest
 import com.example.jwtdemo.dto.AuthResponse
 import com.example.jwtdemo.dto.LoginRequest
 import com.example.jwtdemo.dto.RegisterResponse
+import com.example.jwtdemo.dto.UserSummary
 import com.example.jwtdemo.exception.ConflictException
 import com.example.jwtdemo.model.Role
 import com.example.jwtdemo.model.User
 import com.example.jwtdemo.persistence.UserPersistence
+import com.example.jwtdemo.service.CustomUserDetailsService
 import com.example.jwtdemo.service.JwtService
 import jakarta.annotation.PostConstruct
 import jakarta.servlet.http.HttpServletRequest
@@ -24,7 +26,8 @@ import org.springframework.web.server.ResponseStatusException
 class AuthResource(
     private val userPersistence: UserPersistence,
     private val jwtService: JwtService,
-    private val encoder: PasswordEncoder
+    private val encoder: PasswordEncoder,
+    private val customUserDetailsService: CustomUserDetailsService
 ) {
 
     private val log = LoggerFactory.getLogger(AuthResource::class.java)
@@ -180,5 +183,12 @@ class AuthResource(
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(RegisterResponse("User registered successfully"))
+    }
+
+    @GetMapping("/users")
+    fun getAllUsers(): ResponseEntity<List<UserSummary>> {
+        log.info("Fetching all usernames")
+        val usernames = customUserDetailsService.getAllUsers()
+        return ResponseEntity.ok(usernames)
     }
 }

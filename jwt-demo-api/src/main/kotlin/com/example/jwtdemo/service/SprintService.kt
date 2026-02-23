@@ -110,11 +110,16 @@ class SprintService(
                     projectId = task.project.id,
                     sprintId = task.sprint.id,
                     createdDate = task.createdDate,
-                    updatedDate = task.updatedDate
+                    updatedDate = task.updatedDate,
+                    projectName = task.project.name,
+                    sprintName = task.sprint.name,
+                    username = task.users.username
                 )
             }
         )
     }
+
+
 
     fun getSprintSizeByProjectId(id: Long ): Long {
         log.info("Fetching sprint size for project id {}", id)
