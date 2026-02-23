@@ -20,4 +20,5 @@ interface SprintPersistence:JpaRepository<Sprint, Long> {
     ): List<Sprint>
 
     fun countByProjectId(projectId: Long): Long
+
 }
