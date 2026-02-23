@@ -27,7 +27,7 @@ class ProjectResource(
         return ResponseEntity.status(HttpStatus.CREATED).body(response)
     }
 
-    @GetMapping
+    @GetMapping("/allprojects")
     fun getAllProjects(): ResponseEntity<List<ProjectResponse>> {
         logger.info("Fetching all projects")
 
