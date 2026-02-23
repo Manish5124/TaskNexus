@@ -34,7 +34,7 @@ class Sprint(
     var project: Project,
 
     @OneToMany(mappedBy = "sprint", cascade = [CascadeType.ALL])
-    val tasks: List<Task> = mutableListOf(),
+    var tasks: List<Task> = mutableListOf(),
 
     val createdDate: LocalDateTime = LocalDateTime.now(),
 

@@ -4,6 +4,7 @@ plugins {
 	id("org.springframework.boot") version "3.5.10"
 	id("io.spring.dependency-management") version "1.1.7"
 	kotlin("plugin.jpa") version "1.9.25"
+
 }
 
 group = "com.example"
@@ -38,6 +39,10 @@ dependencies {
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.0")
+	testImplementation("org.springframework.boot:spring-boot-starter-test"){
+		exclude(group="org.mockito")}
+	testImplementation("io.mockk:mockk:1.13.10")
+	testImplementation("com.ninja-squad:springmockk:4.0.2")
 }
 
 kotlin {
@@ -55,3 +60,5 @@ allOpen {
 tasks.withType<Test> {
 	useJUnitPlatform()
 }
+
+
