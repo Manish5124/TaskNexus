@@ -4,6 +4,7 @@ import com.example.jwtdemo.dto.AuthRequest
 import com.example.jwtdemo.dto.AuthResponse
 import com.example.jwtdemo.dto.LoginRequest
 import com.example.jwtdemo.dto.RegisterResponse
+import com.example.jwtdemo.dto.UserResponseDTO
 import com.example.jwtdemo.dto.UserSummary
 import com.example.jwtdemo.exception.ConflictException
 import com.example.jwtdemo.model.Role
@@ -190,5 +191,20 @@ class AuthResource(
         log.info("Fetching all usernames")
         val usernames = customUserDetailsService.getAllUsers()
         return ResponseEntity.ok(usernames)
+    }
+
+
+    @GetMapping("/by-role/{roleName}")
+    fun getAllMembersByRole(
+        @PathVariable roleName: String
+    ): ResponseEntity<List<UserResponseDTO>> {
+
+        log.info("Fetching users with role: {}", roleName)
+
+        val users = jwtService.getAllMembersByRole(roleName)
+
+        log.info("Total users found for role {}: {}", roleName, users.size)
+
+        return ResponseEntity.ok(users)
     }
 }
