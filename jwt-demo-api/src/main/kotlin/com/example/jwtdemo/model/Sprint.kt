@@ -3,6 +3,7 @@ package com.example.jwtdemo.model
 import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -33,8 +34,9 @@ class Sprint(
     @JsonIgnore
     var project: Project,
 
-    @OneToMany(mappedBy = "sprint", cascade = [CascadeType.ALL])
-    var tasks: List<Task> = mutableListOf(),
+
+    @OneToMany(mappedBy = "sprint", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    var tasks: MutableList<Task> = mutableListOf(),
 
     val createdDate: LocalDateTime = LocalDateTime.now(),
 
